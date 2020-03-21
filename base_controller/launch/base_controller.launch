@@ -1,0 +1,31 @@
+<launch>
+
+  <!-- 发布速度0 -->
+  <!-- node pkg="base_controller" type="zero_vel_node" name="zero_vel_node" /-->  
+
+  <!-- 发布速度给驱动器 -->
+  <node pkg="base_controller" type="cmd_vel_node" name="cmd_vel_node" >
+     <remap from="cmd_vel" to="yocs_cmd_vel_mux/safe/cmd_vel" />
+  </node>
+
+  <!-- 倒车充电时，后部超声波保护 -->
+  <node pkg="base_controller" type="sonar_safe_node_1" name="sonar_safe_node_1">
+    <param name="safe_dist" value="0.271" type="double"/>
+    <remap from="yocs_cmd_vel_mux/input/safe" to="yocs_cmd_vel_mux/input/remote"/>
+  </node>
+
+  <!-- 前超声波模块检测障碍物，及时停车 -->
+  <node pkg="base_controller" type="cmd_safe_node" name="cmd_safe_node">
+    <param name="safe_dist" value="0.42" type="double"/>
+  </node>
+  
+  <!-- 发布超声波数据 -->
+  <node pkg="base_controller" type="sonar_filter_node" name="sonar_filter_node" />
+
+  <!-- 发布里程计数据，作为EKF融合的输入 -->
+  <node pkg="base_controller" type="can_receive_lpms_ekf" name="can_receive_lpms_ekf" />
+
+  <!-- 检测ros是否正常运行，不正常运行则给电机设置0速度 -->
+  <node pkg="base_controller" type="ros_status" name="ros_status" />
+
+</launch>

@@ -1,0 +1,13 @@
+<launch>
+
+  <node pkg="base_controller" type="sonar_safe_node_1" name="sonar_safe_node_1">
+    <param name="safe_dist" value="0.271" type="double"/>
+    <remap from="yocs_cmd_vel_mux/input/safe" to="yocs_cmd_vel_mux/input/remote"/>
+  </node>
+
+
+  <node pkg="base_controller" type="cmd_safe_node" name="cmd_safe_node">
+    <param name="safe_dist" value="0.42" type="double"/>
+  </node>
+
+</launch>
