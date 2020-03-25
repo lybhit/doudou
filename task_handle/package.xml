@@ -1,0 +1,33 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format2.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="2">
+    <name>task_handle</name>
+    <version>1.16.6</version>
+    <description>
+        task_handle is useful to fulfill the navigation task!
+
+    </description>
+    <author>lyb</author>
+    <author>lybhit@gmail.com</author>
+    <maintainer email="davidvlu@gmail.com">David V. Lu!!</maintainer>
+    <license>BSD</license>
+    <url>http://wiki.ros.org/move_base</url>
+
+    <buildtool_depend>catkin</buildtool_depend>
+
+    <build_depend>cmake_modules</build_depend>
+    <build_depend>message_generation</build_depend>
+
+    <depend>geometry_msgs</depend>
+    <depend>std_msgs</depend>
+    <depend>move_base_msgs</depend>
+    <depend>roscpp</depend>
+    <depend>rospy</depend>
+    <depend>std_srvs</depend>
+    <depend>tf2_ros</depend>
+    <depend>actionlib</depend>
+
+
+    <exec_depend>message_runtime</exec_depend>
+
+</package>
