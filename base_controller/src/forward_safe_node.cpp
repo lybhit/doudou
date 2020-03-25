@@ -118,6 +118,7 @@ int main(int argc, char** argv){
   ros::init(argc, argv, "forward_safe_node");
 
   ForwardSafeCtrl forward_safe_ctrl;
+  forward_safe_ctrl.run();
   
   ros::AsyncSpinner spinner(2); // Use 2 threads
   spinner.start();

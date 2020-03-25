@@ -69,7 +69,12 @@ void DockingSafeCtrl::callback_imu(const sensor_msgs::Imu::ConstPtr& msg)
 	cur_ang_vel_ = msg->angular_velocity.z;
 
 	cur_theta_ = tf::getYaw(msg->orientation);
-	ROS_INFO("cur_theta_: %f", cur_theta_);
+	// ROS_INFO("cur_theta_: %f", cur_theta_);
+
+	if((ros::Time::now() - go_back_time_).toSec() > 1.0)
+	{
+	  twist_offset_ = 0.0;
+	}
 
 }
 
@@ -88,6 +93,8 @@ void DockingSafeCtrl::callback_vel(const geometry_msgs::Twist::ConstPtr& msg)
 	if((ros::Time::now() - go_back_time_).toSec() > 2.0)
 	{
       spec_theta_ = cur_theta_;
+      twist_offset_ = 0.0;
+      pid_reset_integral(&theta_pid_);
 	}
 
 	ros::Duration pid_duration = ros::Time::now() - go_back_time_;
