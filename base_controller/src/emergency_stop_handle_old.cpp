@@ -3,17 +3,17 @@
 class CanManage
 {
 private:
-    ros::NodeHandle node, private_nh;
+    ros::NodeHandle node;
     int sockfd;
     bool debug;
-
-    int rate;
-
-    ros::Timer updateTimer;
 
     void  recv_manager(void);
     void  callbackThread(void);
     void  calculate(int num);
+
+
+    bool servo_recv_flag;
+    bool hub_recv_flag;
 
     bool flag_a, flag_b, flag_c;
 
@@ -29,7 +29,7 @@ private:
                                  {0x2F,0x02,0x16,0x00,0x01,0x00,0x00,0x00},
                                  {0x2F,0x60,0x60,0x00,0x03,0x00,0x00,0x00}};
 
-    int frame_data_2nd[8] = {0xc8,0x00,0x00,0x00,0xc8,0x00,0x00,0x00};
+    int frame_data_2nd[8] = {0xb8,0x0b,0x00,0x00,0xb8,0x0b,0x00,0x00};
 
     int frame_data_3rd[10][8] = {{0x2B,0x40,0x60,0x00,0x06,0x00,0x00,0x00},
                                  {0x2B,0x40,0x60,0x00,0x07,0x00,0x00,0x00},
@@ -46,25 +46,14 @@ private:
 public:
     CanManage();
     ~CanManage();
-
     void send_stop();
     void send_init(int16_t id_1, int16_t id_2);
-
-    void run(void)
-    {
-        // The timer ensures periodic data publishing
-        updateTimer = ros::Timer(node.createTimer(ros::Duration(0.1/rate),
-                                                &CanManage::listen,
-                                                this));
-    }
-    void listen(const ros::TimerEvent& te);
 };
 
 CanManage::CanManage():
     flag_a(false),
     flag_b(false),
-    flag_c(false),
-    private_nh("~")
+    flag_c(false)
 {
     
     if(can_conect(&sockfd, tx2_can[0]) < 0)
@@ -73,9 +62,41 @@ CanManage::CanManage():
         exit(0);
     }
 
-    private_nh.param("rate", rate, 100);
+    // // boost::thread chatter_thread(&CanManage::callbackThread);
+    // boost::thread chatter_thread(boost::bind(&CanManage::callbackThread, this));
+    
+    ros::Rate loop(20);
+    int count_1 = 0;
+    int count_2 = 0;
+    while(ros::ok())
+    {
+        recv_manager();
+        // if(running == 0 )
+        // {
+        //     break;
+        // }
+        
+        if(flag_a == true && flag_b == true)
+        {
+            ROS_INFO("FLAG : %d, %d, %d", flag_a, flag_b, flag_c);
+            ROS_INFO("go to send data");
+            while(count_1 < 100)
+            {
+                count_1++;
+            }
+            send_init( 0x601, 0x301);
+            usleep(1000);
+            send_init( 0x602, 0x302);
 
-
+            flag_a = false;
+            flag_b = false;
+            flag_c = false;
+            count_1 = 0;
+            count_2 = 0;
+        }
+        ros::spinOnce();
+        loop.sleep();
+    }
 
 //    chatter_thread.join();
 }
@@ -91,30 +112,6 @@ void CanManage::calculate(int input)
     while(a < input)
     {
         a++;
-    }
-}
-
-void CanManage::listen(const ros::TimerEvent& te)
-{
-    recv_manager();
-
-    int count_1 = 0;
-    if(flag_a == true && flag_b == true)
-    {
-        ROS_INFO("FLAG : %d, %d, %d", flag_a, flag_b, flag_c);
-        ROS_INFO("go to send data");
-        while(count_1 < 100)
-        {
-            count_1++;
-        }
-        send_init( 0x601, 0x301);
-        usleep(1000);
-        send_init( 0x602, 0x302);
-
-        flag_a = false;
-        flag_b = false;
-        flag_c = false;
-        count_1 = 0;
     }
 }
 
@@ -143,8 +140,8 @@ void CanManage::send_init(int16_t id_1, int16_t id_2)
         {
             init_frame[0].data[j] = frame_data_1st[i][j];
         }
-        // ROS_INFO("Data: %d, %d, %d, %d, %d, %d, %d, %d",init_frame[0].data[0], init_frame[0].data[1], init_frame[0].data[2],
-        //              init_frame[0].data[3], init_frame[0].data[4], init_frame[0].data[5], init_frame[0].data[6], init_frame[0].data[7]);
+        ROS_INFO("Data: %d, %d, %d, %d, %d, %d, %d, %d",init_frame[0].data[0], init_frame[0].data[1], init_frame[0].data[2],
+                     init_frame[0].data[3], init_frame[0].data[4], init_frame[0].data[5], init_frame[0].data[6], init_frame[0].data[7]);
 //        calculate(10);
        usleep(1000);
 
@@ -167,8 +164,8 @@ void CanManage::send_init(int16_t id_1, int16_t id_2)
         {
             init_frame[0].data[j] = frame_data_3rd[i][j];
         }
-        // ROS_INFO("Data: %d, %d, %d, %d, %d, %d, %d, %d",init_frame[0].data[0], init_frame[0].data[1], init_frame[0].data[2],
-        //              init_frame[0].data[3], init_frame[0].data[4], init_frame[0].data[5], init_frame[0].data[6], init_frame[0].data[7]);
+        ROS_INFO("Data: %d, %d, %d, %d, %d, %d, %d, %d",init_frame[0].data[0], init_frame[0].data[1], init_frame[0].data[2],
+                     init_frame[0].data[3], init_frame[0].data[4], init_frame[0].data[5], init_frame[0].data[6], init_frame[0].data[7]);
         calculate(10);
         usleep(1000);
         send_frame(&init_frame[0], sockfd);
@@ -261,10 +258,8 @@ int main(int argc, char **argv)
 {
     ros::init(argc, argv, "can_manager_node");
     CanManage CanManage;
-
-    CanManage.run();
     
     ros::spin();
-    // ros::shutdown();
+    ros::shutdown();
     return 0;
 }

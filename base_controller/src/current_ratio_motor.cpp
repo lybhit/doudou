@@ -65,6 +65,11 @@ void ask_motor_para()
 
 int main(int argc, char** argv)
 {
+  int threshold_;
+  float duration_;
+  bool switch_;
+
+  bool alarm_flag = false;
 
   struct sockaddr_can addr;
   struct ifreq ifr;
@@ -85,12 +90,17 @@ int main(int argc, char** argv)
 
   ros::init(argc, argv, "current_ratio_node");//初始化串口节点
   ros::NodeHandle n;  //定义节点进程句柄
+  ros::NodeHandle private_nh("~");
+
+  private_nh.param<int>("threshold", threshold_, 500);
+  private_nh.param<float>("duration", duration_, 2.0);
+  private_nh.param<bool>("switch", switch_, false);
 
   ros::Publisher motor_pub = n.advertise<std_msgs::String>("motor_status", 10);
 
   ros::Time time_mark;
     
-  ros::Rate loop_rate(20);    
+  ros::Rate loop_rate(10);    
 
   std_msgs::String str;
 
@@ -100,29 +110,52 @@ int main(int argc, char** argv)
 
     read(s, &frame[1], sizeof(frame[1]));
 
-    ROS_INFO("ID:%x  data:0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x", 
-            frame[1].can_id, frame[1].data[0], frame[1].data[1],
-            frame[1].data[2],frame[1].data[3],frame[1].data[4],frame[1].data[5], frame[1].data[6], frame[1].data[7]);
+    // ROS_INFO("ID:%x  data:0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x", 
+    //         frame[1].can_id, frame[1].data[0], frame[1].data[1],
+    //         frame[1].data[2],frame[1].data[3],frame[1].data[4],frame[1].data[5], frame[1].data[6], frame[1].data[7]);
 
     uint16_t val_1 = (0xff & frame[1].data[4]) | ((0xff & frame[1].data[5]) << 8);
     uint16_t val_2 = (0xff & frame[1].data[6]) | ((0xff & frame[1].data[7]) << 8);
 
-    if(val_1 >= 500 || val_2 >= 500)
-    {
-
-    }
-    else
-    {
-        time_mark = ros::Time::now();
-    }
+    // ROS_INFO("val_1 = %d", val_1);
+    // ROS_INFO("val_2 = %d", val_2);
 
     str.data = "ok";
 
-    if((ros::Time::now() - time_mark).toSec() >= 3.0)
-    {
-      str.data = "alarm";
-    }
 
+    //如果开关打开，则只要警报一次，就一直会报警；否则，当电机过载率降低，消除报警信号
+    if(!switch_){
+      if(val_1 >= threshold_ || val_2 >= threshold_)
+      {
+      }
+      else
+      {
+          time_mark = ros::Time::now();
+      }
+
+      if((ros::Time::now() - time_mark).toSec() >= duration_)
+      {
+        str.data = "alarm";
+      }
+
+    }else{
+      if(val_1 >= threshold_ || val_2 >= threshold_)
+      {
+      }
+      else
+      {
+        if(!alarm_flag){
+          time_mark = ros::Time::now();
+        }   
+      }
+
+      if((ros::Time::now() - time_mark).toSec() >= duration_)
+      {
+        str.data = "alarm";
+        alarm_flag = true;
+      }
+    }
+    
     motor_pub.publish(str);
 
     ros::spinOnce();//周期执行

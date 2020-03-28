@@ -51,96 +51,107 @@ class SubscribeAndPublish
 	}
 	
 	void callback(const sensor_msgs::Imu & cmd_input)
+  {
+    //yaw = tf::getYaw(cmd_input.orientation);
+    vth = cmd_input.angular_velocity.z;
+
+    static tf::TransformBroadcaster odom_broadcaster;//定义tf对象
+    geometry_msgs::TransformStamped odom_trans;//创建一个tf发布需要使用的TransformStamped类型消息
+
+    nav_msgs::Odometry odom;//定义里程计对象
+
+    geometry_msgs::Quaternion odom_quat;//四元数变量
+
+    //定义covariance矩阵，作用为解决位置和速度的不同测量的不确定性
+    float covariance[36] = {0.0001, 0, 0, 0, 0, 0, //covariance on gps_x
+                      0, 0.0001, 0, 0, 0, 0, //covariance on gps_y
+                      0, 0, 9999, 0, 0, 0, //covariance on gps_z
+                      0, 0, 0, 9999, 0, 0, //large covariance on rot x
+                      0, 0, 0, 0, 9999, 0, //large covariance on rot y
+                      0, 0, 0, 0, 0, 0.01};//large covariance on rot z
+  //载入covariance矩阵
+    for(int i=0; i<36; i++)
     {
-      //yaw = tf::getYaw(cmd_input.orientation);
-      vth = cmd_input.angular_velocity.z;
-
-      static tf::TransformBroadcaster odom_broadcaster;//定义tf对象
-      geometry_msgs::TransformStamped odom_trans;//创建一个tf发布需要使用的TransformStamped类型消息
-
-       nav_msgs::Odometry odom;//定义里程计对象
-
-       geometry_msgs::Quaternion odom_quat;//四元数变量
-    
-       //定义covariance矩阵，作用为解决位置和速度的不同测量的不确定性
-       float covariance[36] = {0.0001, 0, 0, 0, 0, 0, //covariance on gps_x
-                          0, 0.0001, 0, 0, 0, 0, //covariance on gps_y
-                          0, 0, 9999, 0, 0, 0, //covariance on gps_z
-                          0, 0, 0, 9999, 0, 0, //large covariance on rot x
-                          0, 0, 0, 0, 9999, 0, //large covariance on rot y
-                          0, 0, 0, 0, 0, 0.01};//large covariance on rot z
-    //载入covariance矩阵
-       for(int i=0; i<36; i++)
-         {
-            odom.pose.covariance[i] = covariance[i];
-         }
-
-          
-        nbytes[0] = read(s, &frame_rev, sizeof(frame_rev)); //接收报文
-
-
-        //串口接收的数据长度正确就处理并发布里程计数据消息
-            vel_linear.data[0] = frame_rev.data[4];
-            vel_linear.data[1] = frame_rev.data[5];
-            vel_angular.data[0] = frame_rev.data[6];
-            vel_angular.data[1] = frame_rev.data[7];
-
-            ROS_INFO("Linear_vel data[0] = %d",  vel_linear.data[0]);
-            ROS_INFO("Linear_vel data[1] = %d",  vel_linear.data[1]);
-
-            ROS_INFO("Angular_vel data[0] = %d",  vel_angular.data[0]);
-            ROS_INFO("Angular_vel data[1] = %d",  vel_angular.data[1]);
-
-            current_time = ros::Time::now();
-
-            double dt = (current_time - last_time).toSec();
-            double delta_x = vel_linear.d * cos(th) * dt * 0.001;
-            double delta_y = vel_linear.d * sin(th) * dt * 0.001;
-
-            double delta_th = vth * dt;
-
-            // double delta_x = v_linear * cos(th) * dt;
-            // double delta_y = v_linear * sin(th) * dt;
-            // double delta_th = v_angular * dt;
-
-
-            x += delta_x;
-            y += delta_y;
-
-            th += delta_th;
-            
-            vx = vel_linear.d * 0.001;
-            vth = vel_angular.d * 0.001;
-
-            //将x 、y坐标，线速度缩小1000倍       
-                
-            //里程计的偏航角需要转换成四元数才能发布
-            odom_quat = tf::createQuaternionMsgFromYaw(th);//将偏航角转换成四元数
-                  
-            //载入里程计时间戳
-            odom.header.stamp = ros::Time::now();
-            //里程计的父子坐标系
-            odom.header.frame_id = "odom";
-            odom.child_frame_id = "base_footprint";
-            //里程计位置数据：x,y,z,方向
-            odom.pose.pose.position.x = x;
-            odom.pose.pose.position.y = y;
-            odom.pose.pose.position.z = 0;
-            odom.pose.pose.orientation = odom_quat;
-            //载入线速度和角速度
-            odom.twist.twist.linear.x = vx;
-            //odom.twist.twist.linear.x = v_linear;
-//            odom.twist.twist.angular.z = vel_angular.d * 0.001;
-            odom.twist.twist.angular.z = vth;
-            // odom.twist.twist.angular.z = v_angular;
-            //发布里程计
-            odom_pub.publish(odom);
-//            ROS_INFO("location: %f, %f, %f", x, y, th);
-//            ROS_INFO("velocity: %d, %d", vel_linear.d, vel_angular.d);
-        
-
-     last_time = ros::Time::now();
+      odom.pose.covariance[i] = covariance[i];
     }
+
+      
+    nbytes[0] = read(s, &frame_rev, sizeof(frame_rev)); //接收报文
+
+
+    //串口接收的数据长度正确就处理并发布里程计数据消息
+    vel_linear.data[0] = frame_rev.data[4];
+    vel_linear.data[1] = frame_rev.data[5];
+    vel_angular.data[0] = frame_rev.data[6];
+    vel_angular.data[1] = frame_rev.data[7];
+
+    if(std::abs(vel_linear.d) == 3)
+    {
+      vel_linear.d = 0;
+    }
+
+    if(vel_angular.d == 20)
+    {
+      vel_angular.d = 0;
+    }
+
+    // ROS_INFO("Linear_vel data[0] = %d",  vel_linear.data[0]);
+    // ROS_INFO("Linear_vel data[1] = %d",  vel_linear.data[1]);
+
+    // ROS_INFO("Angular_vel data[0] = %d",  vel_angular.data[0]);
+    // ROS_INFO("Angular_vel data[1] = %d",  vel_angular.data[1]);
+
+    current_time = ros::Time::now();
+
+    double dt = (current_time - last_time).toSec();
+    double delta_x = vel_linear.d * cos(th) * dt * 0.001;
+    double delta_y = vel_linear.d * sin(th) * dt * 0.001;
+    
+    if(std::abs(vth) <= 0.001 || std::abs(vel_angular.d * 0.001) <= 0.001){
+      vth = 0.0;
+    }
+    double delta_th = vth * dt;
+
+
+    x += delta_x;
+    y += delta_y;
+
+    th += delta_th;
+    
+    vx = vel_linear.d * 0.001;
+
+    if(vth == 0.0 || std::abs(vel_angular.d * 0.001) <= 0.001)
+    {
+      vth = 0.0;
+    }else{
+      vth = vel_angular.d * 0.001;
+    }
+    
+
+    //将x 、y坐标，线速度缩小1000倍       
+        
+    //里程计的偏航角需要转换成四元数才能发布
+    odom_quat = tf::createQuaternionMsgFromYaw(th);//将偏航角转换成四元数
+          
+    //载入里程计时间戳
+    odom.header.stamp = ros::Time::now();
+    //里程计的父子坐标系
+    odom.header.frame_id = "odom";
+    odom.child_frame_id = "base_footprint";
+    //里程计位置数据：x,y,z,方向
+    odom.pose.pose.position.x = x;
+    odom.pose.pose.position.y = y;
+    odom.pose.pose.position.z = 0;
+    odom.pose.pose.orientation = odom_quat;
+    //载入线速度和角速度
+    odom.twist.twist.linear.x = vx;
+
+    odom.twist.twist.angular.z = vth;
+    //发布里程计
+    odom_pub.publish(odom);
+
+    last_time = ros::Time::now();
+  }
 	
 	private:
 	ros::NodeHandle n;
@@ -161,7 +172,7 @@ int main(int argc, char **argv)
   addr.can_ifindex = ifr.ifr_ifindex;
   bind(s, (struct sockaddr *)&addr, sizeof(addr));//将套接字与can0绑定
 
-  //定义接收规则，只接收表示符等于0x83的报文
+  //定义接收规则，只接收表示符等于0x181的报文
   rfilter.can_id = 0x181;
   rfilter.can_mask = CAN_SFF_MASK;
 	

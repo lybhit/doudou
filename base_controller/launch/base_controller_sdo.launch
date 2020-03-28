@@ -3,8 +3,8 @@
   <!-- 发布速度0 -->
   <!-- node pkg="base_controller" type="zero_vel_node" name="zero_vel_node" /-->  
 
-  <!-- 发布速度给驱动器 -->
-  <node pkg="base_controller" type="cmd_vel_node" name="cmd_vel_node" >
+  <!-- 发布速度给驱动器, ros 退出时发送速度0 -->
+  <node pkg="base_controller" type="cmd_vel_node_sdo" name="cmd_vel_node_sdo" >
      <remap from="cmd_vel" to="yocs_cmd_vel_mux/safe/cmd_vel" />
   </node>
 
@@ -16,25 +16,20 @@
 
   <!-- 前超声波模块检测障碍物，及时停车 -->
   <node pkg="base_controller" type="cmd_safe_node" name="cmd_safe_node">
-    <param name="safe_dist" value="0.38" type="double"/>
+    <param name="safe_dist" value="0.42" type="double"/>
   </node>
   
   <!-- 发布超声波数据 -->
   <node pkg="base_controller" type="sonar_filter_node" name="sonar_filter_node" />
 
-  <!-- 发布激光雷达返回最小值 -->
+   <!-- 发布激光雷达返回最小值 -->
   <node pkg="base_controller" type="laser_read" name="laser_read" />
 
   <!-- 发布里程计数据，作为EKF融合的输入 -->
-  <node pkg="base_controller" type="can_receive_lpms_ekf" name="can_receive_lpms_ekf" />
-
-  <!-- 检测ros是否正常运行，不正常运行则给电机设置0速度 -->
-  <!-- node pkg="base_controller" type="ros_status" name="ros_status" /-->
-
-  <!-- node pkg="base_controller" type="can_rev_handle" name="can_rev_handle" /-->
-
-  <!-- 急停恢复 -->
-  <node pkg="base_controller" type="emergency_stop_handle" name="emergency_stop_handle" >
-     <param name="rate" value="50"/>
+  <node pkg="base_controller" type="can_receive_lpms_ekf_sdo" name="can_receive_lpms_ekf_sdo" />
+ 
+  <!-- 实时查看电机转矩负载率,发布相应状态 -->
+  <node pkg="base_controller" type="current_ratio_motor" name="current_ratio_motor">
+    <param name="threshold" value="200" type="int"/>
   </node>
 </launch>

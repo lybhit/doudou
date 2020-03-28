@@ -12,7 +12,7 @@ int recv_frame(struct can_frame *frame, int sockfd)
 	struct timeval timeout;
 	int ret;
 	int val;
-	ROS_INFO("recv_frame");
+//	ROS_INFO("recv_frame");
 
 	ret = recv(sockfd, frame, sizeof(*frame), 0);
 
@@ -25,12 +25,12 @@ int recv_frame(struct can_frame *frame, int sockfd)
 		return -1;
 	}
 #if 1
-	ROS_INFO("frame id:0x%02x", frame->can_id);
+//	ROS_INFO("frame id:0x%02x", frame->can_id);
 
-	for(int i=0;i<frame->can_dlc;i++)
-	{
-		printf("recv:%02d ~ 0x%02x\n", i, frame->data[i]);
-	}
+//	for(int i=0;i<frame->can_dlc;i++)
+//	{
+//		printf("recv:%02d ~ 0x%02x\n", i, frame->data[i]);
+//	}
 #endif
 	return 0;
 }

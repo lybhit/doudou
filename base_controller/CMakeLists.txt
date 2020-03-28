@@ -10,6 +10,7 @@ add_definitions(-std=c++11)
 find_package(catkin REQUIRED COMPONENTS
   roscpp
   rospy
+  serial
   std_msgs
   message_generation
   tf
@@ -26,6 +27,29 @@ find_package(catkin REQUIRED COMPONENTS
 ## See http://ros.org/doc/api/catkin/html/user_guide/setup_dot_py.html
 # catkin_python_setup()
 
+################################################
+## Declare ROS messages, services and actions ##
+################################################
+
+## To declare and build messages, services or actions from within this
+## package, follow these steps:
+## * Let MSG_DEP_SET be the set of packages whose message types you use in
+##   your messages/services/actions (e.g. std_msgs, actionlib_msgs, ...).
+## * In the file package.xml:
+##   * add a build_depend tag for "message_generation"
+##   * add a build_depend and a run_depend tag for each package in MSG_DEP_SET
+##   * If MSG_DEP_SET isn't empty the following dependency has been pulled in
+##     but can be declared for certainty nonetheless:
+##     * add a run_depend tag for "message_runtime"
+## * In this file (CMakeLists.txt):
+##   * add "message_generation" and every package in MSG_DEP_SET to
+##     find_package(catkin REQUIRED COMPONENTS ...)
+##   * add "message_runtime" and every package in MSG_DEP_SET to
+##     catkin_package(CATKIN_DEPENDS ...)
+##   * uncomment the add_*_files sections below as needed
+##     and list every .msg/.srv/.action file to be processed
+##   * uncomment the generate_messages entry below
+##   * add every package in MSG_DEP_SET to generate_messages(DEPENDENCIES ...)
 
 ## Generate messages in the 'msg' folder
 # add_message_files(
@@ -99,6 +123,7 @@ catkin_package(
 # include_directories(include)
 include_directories(
   include
+  include/${PROJECT_NAME}
   ${catkin_INCLUDE_DIRS}
   ${serial_INCLUDE_DIRS}
   
@@ -169,23 +194,52 @@ include_directories(
 #   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 # )
 
+#############
+## Testing ##
+#############
 
-add_executable(cmd_vel_node src/cmd_vel_node.cpp)
+## Add gtest based cpp test target and link libraries
+# catkin_add_gtest(${PROJECT_NAME}-test test/test_base_controller.cpp)
+# if(TARGET ${PROJECT_NAME}-test)
+#   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
+# endif()
+
+## Add folders to be run by python nosetests
+# catkin_add_nosetests(test)
+
+#add_executable(base_controller src/base_controller.cpp)
+#target_link_libraries(base_controller ${catkin_LIBRARIES})
+
+#add_executable(base_controller_show src/base_controller_show.cpp)
+#target_link_libraries(base_controller_show ${catkin_LIBRARIES})
+
+#add_executable(base_controller_uart src/base_controller_uart.cpp)
+#target_link_libraries(base_controller_uart ${catkin_LIBRARIES})
+
+#add_executable(base_controller_uart_show src/base_controller_uart_show.cpp)
+#target_link_libraries(base_controller_uart_show ${catkin_LIBRARIES})
+
+#add_executable(read_odom_msgs src/read_odom_msgs.cpp)
+#target_link_libraries(read_odom_msgs ${catkin_LIBRARIES})
+
+
+
+
+add_executable(cmd_vel_node src/cmd_vel_node.cpp src/cruiser_tx2_can.cpp)
 target_link_libraries(cmd_vel_node ${catkin_LIBRARIES})
 
-
-add_executable(can_receive_mpu6050 src/can_receive_mpu6050.cpp)
-target_link_libraries(can_receive_mpu6050 ${catkin_LIBRARIES})
-
-#add_executable(out_region src/out_region.cpp)
-#target_link_libraries(out_region ${catkin_LIBRARIES})
+add_executable(cmd_vel_node_sdo src/cmd_vel_node_sdo.cpp src/cruiser_tx2_can.cpp)
+target_link_libraries(cmd_vel_node_sdo ${catkin_LIBRARIES})
 
 
 add_executable(can_receive_lpms_no_ekf src/can_receive_lpms_no_ekf.cpp)
 target_link_libraries(can_receive_lpms_no_ekf ${catkin_LIBRARIES})
 
-add_executable(can_receive_lpms_ekf src/can_receive_lpms_ekf.cpp)
+add_executable(can_receive_lpms_ekf src/can_receive_lpms_ekf.cpp src/cruiser_tx2_can.cpp)
 target_link_libraries(can_receive_lpms_ekf ${catkin_LIBRARIES})
+
+add_executable(can_receive_lpms_ekf_sdo src/can_receive_lpms_ekf_sdo.cpp src/cruiser_tx2_can.cpp)
+target_link_libraries(can_receive_lpms_ekf_sdo ${catkin_LIBRARIES})
 
 add_executable(can_receive_odom src/can_receive_odom.cpp)
 target_link_libraries(can_receive_odom ${catkin_LIBRARIES})
@@ -199,6 +253,9 @@ target_link_libraries(sonar_pub_node ${catkin_LIBRARIES})
 add_executable(sonar_filter_node src/sonar_filter_node.cpp)
 target_link_libraries(sonar_filter_node ${catkin_LIBRARIES})
 
+add_executable(laser_read src/laser_read.cpp)
+target_link_libraries(laser_read ${catkin_LIBRARIES})
+
 add_executable(sonar_safe_node_1 src/sonar_safe_node_1.cpp)
 target_link_libraries(sonar_safe_node_1 ${catkin_LIBRARIES})
 
@@ -206,9 +263,33 @@ target_link_libraries(sonar_safe_node_1 ${catkin_LIBRARIES})
 add_executable(cmd_safe_node src/cmd_safe_node.cpp)
 target_link_libraries(cmd_safe_node ${catkin_LIBRARIES})
 
+add_executable(zero_vel_node src/zero_vel_node.cpp)
+target_link_libraries(zero_vel_node ${catkin_LIBRARIES})
+
+add_executable(ros_status src/ros_status.cpp src/cruiser_tx2_can.cpp)
+target_link_libraries(ros_status ${catkin_LIBRARIES})
+
+add_executable(emergency_stop_handle src/emergency_stop_handle.cpp src/cruiser_tx2_can.cpp)
+target_link_libraries(emergency_stop_handle ${catkin_LIBRARIES})
+
+add_executable(can_rev_handle src/can_rev_handle.cpp src/cruiser_tx2_can.cpp)
+target_link_libraries(can_rev_handle ${catkin_LIBRARIES})
+
+
+#new add for sdo communication
+add_executable(current_ratio_motor src/current_ratio_motor.cpp src/cruiser_tx2_can.cpp)
+target_link_libraries(current_ratio_motor ${catkin_LIBRARIES})
+
+#new add 20200315 19:00
 add_executable(docking_safe_node src/docking_safe_node.cpp)
-target_link_libraries(docking_safe_node ${catkin_LIBRARIES})
+target_link_libraries(docking_safe_node ${catkin_LIBRARIES} ${Boost_LIBRARIES})
 
 add_executable(forward_safe_node src/forward_safe_node.cpp)
 target_link_libraries(forward_safe_node ${catkin_LIBRARIES})
+
+
+
+
+
+
 

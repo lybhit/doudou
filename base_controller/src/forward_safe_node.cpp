@@ -29,7 +29,7 @@ public:
 
   void run()
   {
-  	updateTimer = ros::Timer(nh_.createTimer(ros::Duration(0.1/rate_),
+  	updateTimer = ros::Timer(nh_.createTimer(ros::Duration(1./rate_),
                                                 &ForwardSafeCtrl::update,
                                                 this));
   }

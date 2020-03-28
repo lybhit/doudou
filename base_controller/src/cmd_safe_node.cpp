@@ -23,18 +23,19 @@ private:
 	ros::NodeHandle nh_, private_nh;
 	ros::Publisher vel_pub;
 	ros::Subscriber sub_sonar, sub_vel, sub_laser;
-	double safe_dist_, sonar_echo, laser_echo;
+	double safe_dist_, sonar_echo, laser_echo,offset_laser_;
 };
 
 
 FrontSonarSafeCtrl::FrontSonarSafeCtrl() : private_nh("~")
 {
   private_nh.param("safe_dist", safe_dist_, 0.3); 
+	private_nh.param("offset_laser", offset_laser_, 0.06); 
 
-  vel_pub = nh_.advertise<geometry_msgs::Twist>("yocs_cmd_vel_mux/safe/cmd_vel", 5);
-  sub_sonar = nh_.subscribe("sonar_front", 5, &FrontSonarSafeCtrl::callback_sonar, this);
-  sub_vel = nh_.subscribe("yocs_cmd_vel_mux/output/cmd_vel", 5, &FrontSonarSafeCtrl::callback_vel, this);
-  sub_laser = nh_.subscribe("min_dis", 1, &FrontSonarSafeCtrl::callback_laser, this);
+  vel_pub = nh_.advertise<geometry_msgs::Twist>("yocs_cmd_vel_mux/safe/cmd_vel", 3);
+  sub_sonar = nh_.subscribe("sonar_front", 3, &FrontSonarSafeCtrl::callback_sonar, this);
+  sub_vel = nh_.subscribe("yocs_cmd_vel_mux/output/cmd_vel", 3, &FrontSonarSafeCtrl::callback_vel, this);
+  sub_laser = nh_.subscribe("min_dis", 3, &FrontSonarSafeCtrl::callback_laser, this);
 }
 
 
@@ -55,7 +56,7 @@ void FrontSonarSafeCtrl::callback_vel(const geometry_msgs::Twist::ConstPtr& msg)
 
 //	ROS_INFO("safe_dist_: %f", safe_dist_);
 //	if((msg->linear.x != 0 || msg->angular.z != 0) && sonar_echo < safe_dist_ ){
-	if(sonar_echo < safe_dist_ || laser_echo < (safe_dist_ - 0.06)){
+	if(sonar_echo < safe_dist_ || laser_echo < (safe_dist_ - offset_laser_)){
 		safe_vel_.linear.x = 0.0;
 		safe_vel_.angular.z = 0.0;
 		

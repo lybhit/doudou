@@ -81,14 +81,14 @@ void callback(const geometry_msgs::Twist & cmd_input)//订阅/cmd_vel主题回�
     }
   }
 
-  ROS_INFO("Linear_vel data[0] = %d",  linear_vel.data[0]);
-  ROS_INFO("Linear_vel data[1] = %d",  linear_vel.data[1]);
+  // ROS_INFO("Linear_vel data[0] = %d",  linear_vel.data[0]);
+  // ROS_INFO("Linear_vel data[1] = %d",  linear_vel.data[1]);
 
-  ROS_INFO("Angular_vel data[0] = %d",  angular_vel.data[0]);
-  ROS_INFO("Angular_vel data[1] = %d",  angular_vel.data[1]);
+  // ROS_INFO("Angular_vel data[0] = %d",  angular_vel.data[0]);
+  // ROS_INFO("Angular_vel data[1] = %d",  angular_vel.data[1]);
 
-  ROS_INFO("Linear_vel = %d",  linear_vel.d);
-  ROS_INFO("Angular_vel = %d",  angular_vel.d);
+  // ROS_INFO("Linear_vel = %d",  linear_vel.d);
+  // ROS_INFO("Angular_vel = %d",  angular_vel.d);
 
 
   frame.data[0] = 0xEA;
@@ -148,11 +148,11 @@ int main(int argc, char** argv)
 
   time_mark = ros::Time::now();
     
-  ros::Rate loop_rate(20);    
+  ros::Rate loop_rate(10);    
 
   while (ros::ok())
  {
-   if((ros::Time::now() - time_mark).toSec() >= 1.5)
+   if((ros::Time::now() - time_mark).toSec() >= 0.5)
    {
      frame.data[0] = 0xEA;
      frame.data[1] = 0x00;

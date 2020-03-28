@@ -1,0 +1,7 @@
+<launch>
+
+  <node pkg="base_controller" type="current_ratio_motor" name="current_ratio_motor">
+    <param name="threshold" value="10" type="int"/>
+  </node>
+
+</launch>
