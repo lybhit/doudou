@@ -3,6 +3,8 @@
 
 #include "ros/ros.h"
 #include "canHandle.h"
+#include "motor_can_data.h"
+#include "motor_crc16.h"
 #include "carbot_msgs/DifferentialDriveCommRev.h"
 #include "carbot_msgs/DifferentialDriveCommSend.h"
 
@@ -35,6 +37,10 @@ public:
     void run();
 
     void motorReadThread();
+
+    void motorInit(int16_t id_1, int16_t id_2); // Set RPDO, TPDO, enable motor.
+
+    void motorStop();
 
 private:
     ros::NodeHandle node_;
@@ -101,7 +107,13 @@ private:
     uint8_t led_mode_;
     uint8_t motor_enable_;
 
-    
+    MotorCanData motor_init_data_;
+
+    doudou::ModbusCrc16 modbus_crc_;
+
+    ros::Time latest_sub_time_;
+
+    bool debug_;
 
 };
 
