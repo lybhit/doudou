@@ -61,7 +61,7 @@ void BaseCommRos::sendEvent(const ros::TimerEvent& te)
 {
   carbot_msgs::DifferentialDriveCommRev sensorMsg;
   // std::cout << "send msg!!!" << std::endl;
-  ROS_INFO_STREAM_THROTTLE(0.5, "send msg!!!");
+  // ROS_INFO_STREAM_THROTTLE(0.5, "send msg!!!");
 
   {
     writeLock lockWrite(rwMutex_);
@@ -74,14 +74,21 @@ void BaseCommRos::sendEvent(const ros::TimerEvent& te)
     sensorMsg.FromSensorData[2] = 0x24;
 
     sensorMsg.FromSensorData[3] = counter_ ++;
-    if(counter_ == 256){
+    if(counter_ == 256)
+    {
         counter_ = 0;
     }
 
-    sensorMsg.FromSensorData[4] = 0x0; //序列号
-    sensorMsg.FromSensorData[5] = 0x0; //reserved
-    sensorMsg.FromSensorData[6] = 0x0; //reserved
-    sensorMsg.FromSensorData[7] = 0x0; //reserved
+    uint8_t car_type  = 0x02;
+    uint8_t car_size  = 0x01;
+    uint8_t soft_year = 0x00;
+    uint8_t soft_mon  = 0x06;
+    uint8_t soft_data = 0x08;
+
+    sensorMsg.FromSensorData[4] = (car_type<<4)|(car_size); //序列号
+    sensorMsg.FromSensorData[5] = 0x00; //reserved
+    sensorMsg.FromSensorData[6] = (soft_year<<4)|soft_mon;
+    sensorMsg.FromSensorData[7] = soft_data;
 
     sensorMsg.FromSensorData[8]  = l_motor_data_[0]; //左轮毂电机转速（rpm）
     sensorMsg.FromSensorData[9]  = l_motor_data_[1]; //左轮毂电机转速（rpm）
@@ -103,27 +110,27 @@ void BaseCommRos::sendEvent(const ros::TimerEvent& te)
     sensorMsg.FromSensorData[22] = sensorMsg.FromSensorData[14]; //右轮毂电机转速（rpm）
     sensorMsg.FromSensorData[23] = sensorMsg.FromSensorData[15]; //右轮毂电机转速（rpm）
 
-    sensorMsg.FromSensorData[24] = 0; //前左转向电机转速（rpm）
-    sensorMsg.FromSensorData[25] = 0; //前左转向电机转速（rpm）
+    sensorMsg.FromSensorData[24] = 0; //前左转向电机角度（rpm）
+    sensorMsg.FromSensorData[25] = 0; //前左转向电机角度（rpm）
 
-    sensorMsg.FromSensorData[26] = 0; //前右转向电机转速（rpm）
-    sensorMsg.FromSensorData[27] = 0; //前右转向电机转速（rpm）
+    sensorMsg.FromSensorData[26] = 0; //前右转向电机角度（rpm）
+    sensorMsg.FromSensorData[27] = 0; //前右转向电机角度（rpm）
 
-    sensorMsg.FromSensorData[28] = 0; //后左转向电机转速（rpm）
-    sensorMsg.FromSensorData[29] = 0; //后左转向电机转速（rpm）
+    sensorMsg.FromSensorData[28] = 0; //后左转向电机角度（rpm）
+    sensorMsg.FromSensorData[29] = 0; //后左转向电机角度（rpm）
 
-    sensorMsg.FromSensorData[30] = 0; //后右转向电机转速（rpm）
-    sensorMsg.FromSensorData[31] = 0; //后右转向电机转速（rpm）
+    sensorMsg.FromSensorData[30] = 0; //后右转向电机角度（rpm）
+    sensorMsg.FromSensorData[31] = 0; //后右转向电机角度（rpm）
 
     sensorMsg.FromSensorData[32] = l_motor_stat_; //左轮毂驱动器状态信息，bit0=1[使能]，bit1=1[报警]，bit2=1[故障]
     sensorMsg.FromSensorData[33] = r_motor_stat_; //右轮毂驱动器状态信息，bit0=1[使能]，bit1=1[报警]，bit2=1[故障]
-    sensorMsg.FromSensorData[34] = 0; //后左轮毂驱动器状态信息，bit0=1[使能]，bit1=1[报警]，bit2=1[故障]
-    sensorMsg.FromSensorData[35] = 0; //后右轮毂驱动器状态信息，bit0=1[使能]，bit1=1[报警]，bit2=1[故障]
+    sensorMsg.FromSensorData[34] = l_motor_stat_; //后左轮毂驱动器状态信息，bit0=1[使能]，bit1=1[报警]，bit2=1[故障]
+    sensorMsg.FromSensorData[35] = r_motor_stat_; //后右轮毂驱动器状态信息，bit0=1[使能]，bit1=1[报警]，bit2=1[故障]
 
     sensorMsg.FromSensorData[36] = l_motor_err_; //左轮毂驱动器报警码
     sensorMsg.FromSensorData[37] = r_motor_err_; //右轮毂驱动器报警码
-    sensorMsg.FromSensorData[38] = 0; //后左轮毂驱动器报警码
-    sensorMsg.FromSensorData[39] = 0; //后右轮毂驱动器报警码
+    sensorMsg.FromSensorData[38] = l_motor_err_; //后左轮毂驱动器报警码
+    sensorMsg.FromSensorData[39] = r_motor_err_; //后右轮毂驱动器报警码
 
     sensorMsg.FromSensorData[40] = 0; //前左转向电机状态
     sensorMsg.FromSensorData[41] = 0; //前右转向电机状态
@@ -173,19 +180,17 @@ void BaseCommRos::sendEvent(const ros::TimerEvent& te)
     sensorMsg.FromSensorData[74] = r_motor_load_rate_[0]; //前右轮毂负载率
     sensorMsg.FromSensorData[75] = r_motor_load_rate_[1];
 
-    sensorMsg.FromSensorData[76] = 0; //后左轮毂负载率
-    sensorMsg.FromSensorData[77] = 0;
-    sensorMsg.FromSensorData[78] = 0; //后右轮毂负载率
-    sensorMsg.FromSensorData[79] = 0;
+    sensorMsg.FromSensorData[76] = l_motor_load_rate_[0]; //前左轮毂负载率（千分比）
+    sensorMsg.FromSensorData[77] = l_motor_load_rate_[1];
+    sensorMsg.FromSensorData[78] = r_motor_load_rate_[0]; //前右轮毂负载率
+    sensorMsg.FromSensorData[79] = r_motor_load_rate_[1];
   }
 
   modbus_crc_.push_vector(sensorMsg.FromSensorData);
 
-  // sensorMsg.FromSensorData[80] = crc_[0]; //crc校验
-  // sensorMsg.FromSensorData[81] = crc_[1]; //crc校验
   if(counter_ % 10 == 0)
   {
-    ROS_INFO("crc16 data: %d, %d", sensorMsg.FromSensorData[80], sensorMsg.FromSensorData[81]);
+    // ROS_INFO("crc16 data: %d, %d", sensorMsg.FromSensorData[80], sensorMsg.FromSensorData[81]);
   }
   
   msg_publisher_.publish(sensorMsg);
@@ -194,7 +199,7 @@ void BaseCommRos::sendEvent(const ros::TimerEvent& te)
 
   if(dur > 1.0)
   {
-    motorStop();
+    // motorStop();
   }
 
 }
@@ -218,11 +223,13 @@ void BaseCommRos::sensorMsgCallback(const carbot_msgs::DifferentialDriveCommSend
 
   motor_enable_ = msg->ToSensorData[5] & 0b00000011;
 
-  l_motor_vel_send_.d = ((short)msg->ToSensorData[6]) << 8 | (short)msg->ToSensorData[7];
-  r_motor_vel_send_.d = -(((short)msg->ToSensorData[8]) << 8 | (short)msg->ToSensorData[9]);
+  // l_motor_vel_send_.d = ((short)msg->ToSensorData[6]) << 8 | (short)msg->ToSensorData[7];
+  // r_motor_vel_send_.d = (((short)msg->ToSensorData[8]) << 8 | (short)msg->ToSensorData[9]);
+  l_motor_vel_send_.d = -(short)((msg->ToSensorData[6]) << 8 | msg->ToSensorData[7]);
+  r_motor_vel_send_.d = -(short)((msg->ToSensorData[8]) << 8 | msg->ToSensorData[9]);
 
-  std::cout << "l_motor_vel_send_ " << l_motor_vel_send_.d << std::endl;
-  std::cout << "r_motor_vel_send_ " << r_motor_vel_send_.d << std::endl;
+  // std::cout << "l_motor_vel_send_ " << l_motor_vel_send_.d << std::endl;
+  // std::cout << "r_motor_vel_send_ " << r_motor_vel_send_.d << std::endl;
 
   struct can_frame send_2_motor[2];
   send_2_motor[0].can_id = 0x401;
@@ -232,7 +239,7 @@ void BaseCommRos::sensorMsgCallback(const carbot_msgs::DifferentialDriveCommSend
   send_2_motor[0].data[2] = l_motor_vel_send_.data[2];
   send_2_motor[0].data[3] = l_motor_vel_send_.data[3];
 
-  ROS_INFO("left can frame data: %d, %d, %d, %d", send_2_motor[0].data[0], send_2_motor[0].data[1], send_2_motor[0].data[2], send_2_motor[0].data[3]);
+  // ROS_INFO("left can frame data: %x, %x, %x, %x", send_2_motor[0].data[0], send_2_motor[0].data[1], send_2_motor[0].data[2], send_2_motor[0].data[3]);
 
   send_2_motor[1].can_id = 0x402;
   send_2_motor[1].can_dlc = 4;
@@ -241,7 +248,7 @@ void BaseCommRos::sensorMsgCallback(const carbot_msgs::DifferentialDriveCommSend
   send_2_motor[1].data[2] = r_motor_vel_send_.data[2];
   send_2_motor[1].data[3] = r_motor_vel_send_.data[3];
 
-  ROS_INFO("right can frame data: %d, %d, %d, %d", send_2_motor[1].data[0], send_2_motor[1].data[1], send_2_motor[1].data[2], send_2_motor[1].data[3]);
+  // ROS_INFO("right can frame data: %x, %x, %x, %x", send_2_motor[1].data[0], send_2_motor[1].data[1], send_2_motor[1].data[2], send_2_motor[1].data[3]);
 
   if(debug_)
   {
@@ -289,7 +296,7 @@ void BaseCommRos::motorReadThread()
          r_motor_data_[0] = reader.data[0]; 
          r_motor_data_[1] = reader.data[1];
          r_motor_data_[2] = reader.data[2];
-         r_motor_data_[3] = reader.data[3] | 0x80; // 右轮反向
+         r_motor_data_[3] = reader.data[3]; // 右轮反向
 
          r_motor_load_rate_[0] = reader.data[5];
          r_motor_load_rate_[1] = reader.data[4];
@@ -297,7 +304,7 @@ void BaseCommRos::motorReadThread()
        }
      }
 
-     usleep(20000);
+     usleep(1000);
    }
 
 }
@@ -384,7 +391,7 @@ void BaseCommRos::motorStop()
   ros::Rate loop(100);
   for(int i=0;i<10;i++)
   {
-      ROS_INFO("send stop");
+      // ROS_INFO("send stop");
       motor_dev_.sendFrame(&stop_frame[0]);
       usleep(100);
       motor_dev_.sendFrame(&stop_frame[1]);

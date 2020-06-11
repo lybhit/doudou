@@ -1,6 +1,7 @@
 <launch>
   <node pkg="base_comm" type="base_comm_node" name="base_comm_node" output="screen">
-        <!-- <remap from="tx2MsgToSensor" to="sensorMsgTx2Send" /> -->
-        <remap from="tx2MsgToSensor" to="msg_send" />
+        <remap from="tx2MsgToSensor" to="sensorMsgTx2Send" />
+        <param name="debug" value="false" />
+        <!-- <remap from="tx2MsgToSensor" to="msg_send" /> -->
   </node>
 </launch>
