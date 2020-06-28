@@ -112,13 +112,13 @@ public:
         int val;
         fd_set rdfs;
 
-        timeout.tv_sec = 1;
-        timeout.tv_usec = 0;
+        timeout.tv_sec = 0;
+        timeout.tv_usec = 10;
 
         FD_ZERO(&rdfs);
         FD_SET(s, &rdfs);
 
-        if((ret = select(s+1, &rdfs, NULL, NULL, &timeout)) <= 0)
+        if((ret = select(s+1, &rdfs, NULL, NULL, NULL)) <= 0)
         {
             perror("select");
             return 0;

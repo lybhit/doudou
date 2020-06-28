@@ -35,6 +35,8 @@ BaseCommRos::BaseCommRos()
     }
 
     motor_read_thread_ = new boost::thread(boost::bind(&BaseCommRos::motorReadThread, this));
+    // left_motor_read_thread_ = new boost::thread(boost::bind(&BaseCommRos::leftMotorReadThread, this));
+    // right_motor_read_thread_ = new boost::thread(boost::bind(&BaseCommRos::rightMotorReadThread, this));
 
     msg_publisher_ = node_.advertise<carbot_msgs::DifferentialDriveCommRev>(sensor_2_tx2_topic_, 10);
 
@@ -66,6 +68,16 @@ void BaseCommRos::sendEvent(const ros::TimerEvent& te)
   {
     writeLock lockWrite(rwMutex_);
 
+    if(l_motor_data_.d == -1)
+    {
+      l_motor_data_.d = 0;
+    }
+
+    if(r_motor_data_.d == -1)
+    {
+      r_motor_data_.d = 0;
+    }
+
     sensorMsg.header.stamp = ros::Time::now();
     
     sensorMsg.FromSensorData.resize(80);
@@ -90,15 +102,17 @@ void BaseCommRos::sendEvent(const ros::TimerEvent& te)
     sensorMsg.FromSensorData[6] = (soft_year<<4)|soft_mon;
     sensorMsg.FromSensorData[7] = soft_data;
 
-    sensorMsg.FromSensorData[8]  = l_motor_data_[0]; //左轮毂电机转速（rpm）
-    sensorMsg.FromSensorData[9]  = l_motor_data_[1]; //左轮毂电机转速（rpm）
-    sensorMsg.FromSensorData[10] = l_motor_data_[2]; //左轮毂电机转速（rpm）
-    sensorMsg.FromSensorData[11] = l_motor_data_[3]; //左轮毂电机转速（rpm）
 
-    sensorMsg.FromSensorData[12] = r_motor_data_[0]; //右轮毂电机转速（rpm）
-    sensorMsg.FromSensorData[13] = r_motor_data_[1]; //右轮毂电机转速（rpm）
-    sensorMsg.FromSensorData[14] = r_motor_data_[2]; //右轮毂电机转速（rpm）
-    sensorMsg.FromSensorData[15] = r_motor_data_[3]; //右轮毂电机转速（rpm）
+
+    sensorMsg.FromSensorData[8]   = (l_motor_data_.data[0]); //左轮毂电机转速（rpm）
+    sensorMsg.FromSensorData[9]   = (l_motor_data_.data[1]); //左轮毂电机转速（rpm）
+    sensorMsg.FromSensorData[10] = (l_motor_data_.data[2]); //左轮毂电机转速（rpm）
+    sensorMsg.FromSensorData[11] = (l_motor_data_.data[3]); //左轮毂电机转速（rpm）
+
+    sensorMsg.FromSensorData[12] = (r_motor_data_.data[0]); //右轮毂电机转速（rpm）
+    sensorMsg.FromSensorData[13] = (r_motor_data_.data[1]); //右轮毂电机转速（rpm）
+    sensorMsg.FromSensorData[14] = (r_motor_data_.data[2]); //右轮毂电机转速（rpm）
+    sensorMsg.FromSensorData[15] = (r_motor_data_.data[3]); //右轮毂电机转速（rpm）
 
     sensorMsg.FromSensorData[16] = sensorMsg.FromSensorData[8]; //左轮毂电机转速（rpm）
     sensorMsg.FromSensorData[17] = sensorMsg.FromSensorData[9]; //左轮毂电机转速（rpm）
@@ -188,19 +202,19 @@ void BaseCommRos::sendEvent(const ros::TimerEvent& te)
 
   modbus_crc_.push_vector(sensorMsg.FromSensorData);
 
-  if(counter_ % 10 == 0)
-  {
-    // ROS_INFO("crc16 data: %d, %d", sensorMsg.FromSensorData[80], sensorMsg.FromSensorData[81]);
-  }
+  // if(counter_ % 10 == 0)
+  // {
+  //   // ROS_INFO("crc16 data: %d, %d", sensorMsg.FromSensorData[80], sensorMsg.FromSensorData[81]);
+  // }
   
   msg_publisher_.publish(sensorMsg);
 
-  double dur = (ros::Time::now() - latest_sub_time_).toSec();
+  // double dur = (ros::Time::now() - latest_sub_time_).toSec();
 
-  if(dur > 1.0)
-  {
-    // motorStop();
-  }
+  // if(dur > 1.0)
+  // {
+  //   // motorStop();
+  // }
 
 }
 
@@ -264,7 +278,7 @@ void BaseCommRos::sensorMsgCallback(const carbot_msgs::DifferentialDriveCommSend
 void BaseCommRos::motorReadThread()
 {
   ros::NodeHandle n;
-  std::cout << "enter thead" << std::endl;
+  std::cout << "enter  left motor read thead" << std::endl;
    struct can_frame reader;
 
   signal(SIGTERM, sigterm);
@@ -280,34 +294,72 @@ void BaseCommRos::motorReadThread()
        if(reader.can_id == 0x181)
        {
          readLock lockRead(rwMutex_);
-         l_motor_data_[0] = reader.data[0];
-         l_motor_data_[1] = reader.data[1];
-         l_motor_data_[2] = reader.data[2];
-         l_motor_data_[3] = reader.data[3];
+         l_motor_data_.data[0] = reader.data[0];
+         l_motor_data_.data[1] = reader.data[1];
+         l_motor_data_.data[2] = reader.data[2];
+         l_motor_data_.data[3] = reader.data[3];
 
          l_motor_load_rate_[0] = reader.data[5];
          l_motor_load_rate_[1] = reader.data[4];
-        //  std::cout << std::hex << reader.can_id << ": " << static_cast<int>(l_motor_data_[3]) << ' ' << static_cast<int>(l_motor_data_[2]) << ' ' << static_cast<int>(l_motor_data_[1]) << ' ' << static_cast<int>(l_motor_data_[0]) << std::endl;
+        //  ROS_INFO("read can frame data: %x, %x, %x, %x", l_motor_data_.data[0], l_motor_data_.data[1], l_motor_data_.data[2], l_motor_data_.data[3]);
        }
 
        if(reader.can_id == 0x182)
        {
          readLock lockRead(rwMutex_);
-         r_motor_data_[0] = reader.data[0]; 
-         r_motor_data_[1] = reader.data[1];
-         r_motor_data_[2] = reader.data[2];
-         r_motor_data_[3] = reader.data[3]; // 右轮反向
+         r_motor_data_.data[0] = reader.data[0]; 
+         r_motor_data_.data[1] = reader.data[1];
+         r_motor_data_.data[2] = reader.data[2];
+         r_motor_data_.data[3] = reader.data[3]; 
 
          r_motor_load_rate_[0] = reader.data[5];
          r_motor_load_rate_[1] = reader.data[4];
-        //  std::cout << std::hex << reader.can_id << ": " << r_motor_data_[3] << ' ' << r_motor_data_[2] << ' ' << r_motor_data_[1] << ' ' << r_motor_data_[0] << std::endl;
        }
      }
 
-     usleep(1000);
+     usleep(100);
    }
 
 }
+
+// void BaseCommRos::leftMotorReadThread()
+// {
+//   ros::NodeHandle n;
+//   std::cout << "enter  right motor read thead" << std::endl;
+//    struct can_frame reader;
+
+//   signal(SIGTERM, sigterm);
+//   signal(SIGHUP, sigterm);
+//   signal(SIGINT, sigterm);
+
+//    while(n.ok() && running_)
+//    {
+//     //  std::cout << "go to receive data process" << std::endl;
+//      if(motor_dev_.recvFrame(&reader))
+//      {
+//       //  std::cout << "receive data." << std::endl;
+//        {
+//          readLock lockRead(rwMutex_);
+
+//        if(reader.can_id == 0x182)
+//        {
+//          readLock lockRead(rwMutex_);
+//          r_motor_data_.data[0] = reader.data[0]; 
+//          r_motor_data_.data[1] = reader.data[1];
+//          r_motor_data_.data[2] = reader.data[2];
+//          r_motor_data_.data[3] = reader.data[3]; 
+
+//          r_motor_load_rate_[0] = reader.data[5];
+//          r_motor_load_rate_[1] = reader.data[4];
+//         //  std::cout << std::hex << reader.can_id << ": " << r_motor_data_[3] << ' ' << r_motor_data_[2] << ' ' << r_motor_data_[1] << ' ' << r_motor_data_[0] << std::endl;
+//        }
+//      }
+
+//      usleep(100);
+//    }
+
+// }
+// }
 
 void BaseCommRos::motorInit(int16_t id_1, int16_t id_2)
 {

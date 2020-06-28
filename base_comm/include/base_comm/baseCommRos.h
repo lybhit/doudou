@@ -52,8 +52,8 @@ private:
     ros::Timer msg_send_timer_;//设置定时发送消息
     int rate_;
 
-    uint8_t l_motor_data_[4];
-    uint8_t r_motor_data_[4];
+    // uint8_t l_motor_data_[4];
+    // uint8_t r_motor_data_[4];
     uint8_t l_motor_stat_;
     uint8_t r_motor_stat_;
 
@@ -64,7 +64,7 @@ private:
     {
       int d;
       unsigned char data[4];
-    }l_motor_vel_send_, r_motor_vel_send_;
+    }l_motor_vel_send_, r_motor_vel_send_, l_motor_data_, r_motor_data_;
 
     uint8_t battery_volt_[2];
     uint8_t battery_current_[2];
