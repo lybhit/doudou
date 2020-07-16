@@ -36,7 +36,8 @@ public:
     ~CANHandle()
     {
         std::cout << "~CANHandle" << std::endl;
-        close(s);
+        disconnectSocket();
+        // close(s);
     }
 
     void setFilterPara(const int filter_id, const int filter_mask)
@@ -153,6 +154,12 @@ public:
     //    }
     //#endif
         return 0;
+    }
+
+    void disconnectSocket()
+    {
+        std::cout << "close s" << std::endl;
+        close(s);
     }
 
 private:

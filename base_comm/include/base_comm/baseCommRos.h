@@ -16,9 +16,9 @@
 
 #include <signal.h>
 
-namespace doudou {
-
 int running_; // 用于退出线程
+
+namespace doudou {
 
 typedef boost::shared_mutex            WR_Mutex;
 typedef boost::unique_lock<WR_Mutex>   writeLock;
@@ -114,6 +114,10 @@ private:
     ros::Time latest_sub_time_;
 
     bool debug_;
+    bool rpm_toggle_;
+
+    bool flag_a_, flag_b_;
+    bool can_connect_flag_;
 
 };
 
